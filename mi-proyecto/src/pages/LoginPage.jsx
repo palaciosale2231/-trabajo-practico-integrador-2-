@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
-import { useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import useForm from '../hooks/useForm'
 import { getApiErrorMessage, getApiUrl } from '../config/api'
 
@@ -13,6 +12,7 @@ function LoginPage() {
   const { formData, handleInputChange } = useForm(INITIAL_VALUES)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const location = useLocation()
   const navigate = useNavigate()
 
   const handleSubmit = async (event) => {
@@ -40,7 +40,9 @@ function LoginPage() {
       }
 
       localStorage.setItem('isLogged', 'true')
-      navigate('/')
+      navigate('/', {
+        state: { successMessage: 'Sesión iniciada correctamente.' },
+      })
     } catch (requestError) {
       setErrorMessage(
         requestError.message || 'No se pudo conectar con el servidor.',
@@ -69,6 +71,14 @@ function LoginPage() {
           Ingresa tus datos para volver a tus lecturas favoritas.
         </p>
 
+        {location.state?.successMessage && (
+          <p
+            className="mt-6 rounded-xl border border-emerald-300/30 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-100"
+            role="status"
+          >
+            {location.state.successMessage}
+          </p>
+        )}
         {errorMessage && (
           <p
             className="mt-6 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"

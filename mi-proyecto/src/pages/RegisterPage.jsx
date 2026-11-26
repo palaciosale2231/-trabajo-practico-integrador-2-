@@ -1,5 +1,12 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
+import { useNavigate } from 'react-router'
 import useForm from '../hooks/useForm'
+import {
+  getApiErrorMessage,
+  getApiUrl,
+  getValidationErrors,
+} from '../config/api'
 
 const INITIAL_VALUES = {
   username: '',
@@ -23,10 +30,56 @@ const INPUT_FIELDS = [
 ]
 
 function RegisterPage() {
-  const { formData, handleInputChange } = useForm(INITIAL_VALUES)
+  const { formData, handleInputChange, handleReset } = useForm(INITIAL_VALUES)
+  const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+  const [validationErrors, setValidationErrors] = useState([])
+  const navigate = useNavigate()
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
+    setErrorMessage('')
+    setValidationErrors([])
+    setIsLoading(true)
+
+    try {
+      const response = await fetch(getApiUrl('auth/register'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(formData),
+      })
+      const responseData = await response.json()
+
+      if (!response.ok) {
+        if (response.status === 400) {
+          setValidationErrors(getValidationErrors(responseData))
+          throw new Error('Revisa los datos ingresados.')
+        }
+
+        throw new Error(
+          getApiErrorMessage(
+            response.status,
+            responseData,
+            'No se pudo crear la cuenta.',
+          ),
+        )
+      }
+
+      handleReset()
+      navigate('/login', {
+        state: {
+          successMessage:
+            responseData.message || 'Tu cuenta se creó correctamente.',
+        },
+      })
+    } catch (requestError) {
+      setErrorMessage(
+        requestError.message || 'No se pudo conectar con el servidor.',
+      )
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -48,6 +101,25 @@ function RegisterPage() {
           Comparte tus ideas y descubre nuevas historias.
         </p>
 
+        {errorMessage && (
+          <p
+            className="mt-6 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
+            role="alert"
+          >
+            {errorMessage}
+          </p>
+        )}
+        {validationErrors.length > 0 && (
+          <ul
+            className="mt-4 space-y-2 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
+            role="alert"
+          >
+            {validationErrors.map((error) => (
+              <li key={error.id}>{error.message}</li>
+            ))}
+          </ul>
+        )}
+
         <form className="mt-8 grid gap-5 sm:grid-cols-2" onSubmit={handleSubmit}>
           {INPUT_FIELDS.map((field) => (
             <label
@@ -64,6 +136,7 @@ function RegisterPage() {
                 id={field.name}
                 name={field.name}
                 onChange={handleInputChange}
+                minLength={field.name === 'username' ? 3 : undefined}
                 required={field.required}
                 type={field.type}
                 value={formData[field.name]}
@@ -85,10 +158,11 @@ function RegisterPage() {
             />
           </label>
           <button
-            className="rounded-xl bg-emerald-300 px-4 py-3 font-semibold text-slate-950 transition hover:bg-emerald-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 sm:col-span-2"
+            className="rounded-xl bg-emerald-300 px-4 py-3 font-semibold text-slate-950 transition hover:bg-emerald-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2"
+            disabled={isLoading}
             type="submit"
           >
-            Crear cuenta
+            {isLoading ? 'Creando cuenta...' : 'Crear cuenta'}
           </button>
         </form>
 
