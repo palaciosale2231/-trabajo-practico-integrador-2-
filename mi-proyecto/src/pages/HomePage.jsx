@@ -1,8 +1,10 @@
+import { useLocation } from 'react-router'
 import useFetch from '../hooks/useFetch'
 import { getApiUrl } from '../config/api'
 
 function HomePage() {
   const { data, isLoading, error } = useFetch(getApiUrl('articles'))
+  const location = useLocation()
   const articles = Array.isArray(data)
     ? data
     : Array.isArray(data?.articles)
@@ -22,6 +24,14 @@ function HomePage() {
           Artículos de nuestra comunidad, reunidos en un espacio para aprender y
           compartir.
         </p>
+        {location.state?.successMessage && (
+          <p
+            className="mt-6 rounded-xl border border-emerald-300/30 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-100"
+            role="status"
+          >
+            {location.state.successMessage}
+          </p>
+        )}
       </section>
 
       <section aria-labelledby="articles-heading">
