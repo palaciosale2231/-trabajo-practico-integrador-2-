@@ -1,5 +1,7 @@
-import { Link } from 'react-router'
+import { useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router'
 import useForm from '../hooks/useForm'
+import { getApiErrorMessage, getApiUrl } from '../config/api'
 
 const INITIAL_VALUES = {
   email: '',
@@ -8,9 +10,46 @@ const INITIAL_VALUES = {
 
 function LoginPage() {
   const { formData, handleInputChange } = useForm(INITIAL_VALUES)
+  const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+  const location = useLocation()
+  const navigate = useNavigate()
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
+    setErrorMessage('')
+    setIsLoading(true)
+
+    try {
+      const response = await fetch(getApiUrl('auth/login'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(formData),
+      })
+      const responseData = await response.json()
+
+      if (!response.ok) {
+        throw new Error(
+          getApiErrorMessage(
+            response.status,
+            responseData,
+            'No se pudo iniciar sesión.',
+          ),
+        )
+      }
+
+      localStorage.setItem('isLogged', 'true')
+      navigate('/', {
+        state: { successMessage: 'Sesión iniciada correctamente.' },
+      })
+    } catch (requestError) {
+      setErrorMessage(
+        requestError.message || 'No se pudo conectar con el servidor.',
+      )
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -31,6 +70,23 @@ function LoginPage() {
         <p className="mt-3 leading-6 text-slate-400">
           Ingresa tus datos para volver a tus lecturas favoritas.
         </p>
+
+        {location.state?.successMessage && (
+          <p
+            className="mt-6 rounded-xl border border-emerald-300/30 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-100"
+            role="status"
+          >
+            {location.state.successMessage}
+          </p>
+        )}
+        {errorMessage && (
+          <p
+            className="mt-6 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
+            role="alert"
+          >
+            {errorMessage}
+          </p>
+        )}
 
         <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
           <label className="block text-sm font-medium text-slate-200">
@@ -60,10 +116,11 @@ function LoginPage() {
             />
           </label>
           <button
-            className="w-full rounded-xl bg-emerald-300 px-4 py-3 font-semibold text-slate-950 transition hover:bg-emerald-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300"
+            className="w-full rounded-xl bg-emerald-300 px-4 py-3 font-semibold text-slate-950 transition hover:bg-emerald-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isLoading}
             type="submit"
           >
-            Ingresar
+            {isLoading ? 'Ingresando...' : 'Ingresar'}
           </button>
         </form>
 
