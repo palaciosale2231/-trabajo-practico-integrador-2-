@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import useForm from '../hooks/useForm'
-import { getApiErrorMessage, getApiUrl } from '../config/api'
+import {
+  getApiErrorMessage,
+  getApiUrl,
+  getValidationErrors,
+} from '../config/api'
 
 const INITIAL_VALUES = {
   email: '',
@@ -12,12 +16,14 @@ function LoginPage() {
   const { formData, handleInputChange } = useForm(INITIAL_VALUES)
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [validationErrors, setValidationErrors] = useState([])
   const location = useLocation()
   const navigate = useNavigate()
 
   const handleSubmit = async (event) => {
     event.preventDefault()
     setErrorMessage('')
+    setValidationErrors([])
     setIsLoading(true)
 
     try {
@@ -30,6 +36,11 @@ function LoginPage() {
       const responseData = await response.json()
 
       if (!response.ok) {
+        if (response.status === 400) {
+          setValidationErrors(getValidationErrors(responseData))
+          throw new Error('Revisa los datos ingresados.')
+        }
+
         throw new Error(
           getApiErrorMessage(
             response.status,
@@ -86,6 +97,16 @@ function LoginPage() {
           >
             {errorMessage}
           </p>
+        )}
+        {validationErrors.length > 0 && (
+          <ul
+            className="mt-4 space-y-2 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
+            role="alert"
+          >
+            {validationErrors.map((error) => (
+              <li key={error.id}>{error.message}</li>
+            ))}
+          </ul>
         )}
 
         <form className="mt-8 space-y-5" onSubmit={handleSubmit}>

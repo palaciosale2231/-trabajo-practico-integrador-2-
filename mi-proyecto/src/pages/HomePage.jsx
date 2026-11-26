@@ -83,7 +83,11 @@ function HomePage() {
                 className="group rounded-2xl border border-white/10 bg-slate-900/70 p-6 transition hover:border-emerald-300/40 hover:bg-slate-900"
               >
                 <p className="text-sm font-medium text-emerald-300">
-                  {article.author?.username || article.author || 'Comunidad'}
+                  {article.author?.username ||
+                    article.author?.alias ||
+                    (typeof article.author === 'string'
+                      ? article.author
+                      : 'Comunidad')}
                 </p>
                 <h3 className="mt-3 text-xl font-semibold text-white transition group-hover:text-emerald-100">
                   {article.title}
