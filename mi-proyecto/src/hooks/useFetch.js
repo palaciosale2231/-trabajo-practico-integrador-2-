@@ -1,38 +1,45 @@
 import { useCallback, useEffect, useState } from 'react'
 
 function useFetch(url) {
-  const [data, setData] = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [requestState, setRequestState] = useState({
+    url,
+    data: null,
+    isLoading: true,
+    error: '',
+  })
 
   const fetchData = useCallback(
     async (signal) => {
-      setIsLoading(true)
-      setError('')
-
+      let responseData = null
+      let requestError = ''
       try {
         const response = await fetch(url, {
           credentials: 'include',
           signal,
         })
-        const responseData = await response.json()
+        const parsedData = await response.json()
 
         if (!response.ok) {
           throw new Error(
             response.status === 500
               ? 'Ocurrió un error interno. Inténtalo nuevamente.'
-              : responseData.message || 'No se pudieron cargar los datos.',
+              : parsedData.message || 'No se pudieron cargar los datos.',
           )
         }
-
-        setData(responseData)
-      } catch (requestError) {
-        if (requestError.name !== 'AbortError') {
-          setError(requestError.message || 'No se pudo conectar con el servidor.')
+        responseData = parsedData
+      } catch (caughtError) {
+        if (caughtError.name !== 'AbortError') {
+          requestError =
+            caughtError.message || 'No se pudo conectar con el servidor.'
         }
       } finally {
         if (!signal.aborted) {
-          setIsLoading(false)
+          setRequestState({
+            url,
+            data: requestError ? null : responseData,
+            isLoading: false,
+            error: requestError,
+          })
         }
       }
     },
@@ -46,7 +53,13 @@ function useFetch(url) {
     return () => controller.abort()
   }, [fetchData])
 
-  return { data, isLoading, error }
+  const isCurrentRequest = requestState.url === url
+
+  return {
+    data: isCurrentRequest ? requestState.data : null,
+    isLoading: !isCurrentRequest || requestState.isLoading,
+    error: isCurrentRequest ? requestState.error : '',
+  }
 }
 
 export default useFetch
