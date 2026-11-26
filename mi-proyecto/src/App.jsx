@@ -1,10 +1,27 @@
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
+import Navbar from './components/Navbar'
+import HomePage from './pages/HomePage'
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
+
 function App() {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center px-6">
-      <h1 className="text-4xl font-semibold tracking-tight text-white">
-        Bitácora
-      </h1>
-    </main>
+    <BrowserRouter>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <>
+              <Navbar />
+              <HomePage />
+            </>
+          }
+        />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="*" element={<Navigate replace to="/login" />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
