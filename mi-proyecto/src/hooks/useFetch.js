@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { getApiErrorMessage } from '../config/api'
 
 function useFetch(url) {
   const [requestState, setRequestState] = useState({
@@ -21,9 +22,11 @@ function useFetch(url) {
 
         if (!response.ok) {
           throw new Error(
-            response.status === 500
-              ? 'Ocurrió un error interno. Inténtalo nuevamente.'
-              : parsedData.message || 'No se pudieron cargar los datos.',
+            getApiErrorMessage(
+              response.status,
+              parsedData,
+              'No se pudieron cargar los datos.',
+            ),
           )
         }
         responseData = parsedData

@@ -1,9 +1,8 @@
 import useFetch from '../hooks/useFetch'
-
-const ARTICLES_URL = 'http://localhost:3001/api/articles'
+import { getApiUrl } from '../config/api'
 
 function HomePage() {
-  const { data, isLoading, error } = useFetch(ARTICLES_URL)
+  const { data, isLoading, error } = useFetch(getApiUrl('articles'))
   const articles = Array.isArray(data)
     ? data
     : Array.isArray(data?.articles)
